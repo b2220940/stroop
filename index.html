@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ストループ課題（研究用）</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 20px; }
+    #quiz, #result, #practice, #main, #message { display: none; }
+    button { padding: 10px 20px; margin: 10px; font-size: 18px; }
+    .color-btn { width: 100px; height: 50px; font-size: 20px; color: white; border: none; border-radius: 8px; }
+    #question { font-size: 48px; margin: 30px; }
+  </style>
+</head>
+<body>
+  <h1>ストループ課題（研究用）</h1>
+
+  <!-- 開始画面 -->
+  <div id="start">
+    <p>名前と気温を入力してください</p>
+    <input type="text" id="username" placeholder="名前"><br>
+    <input type="number" id="temperature" placeholder="気温（℃）"><br>
+    <button onclick="startPractice()">練習を開始</button>
+  </div>
+
+  <!-- 練習モード -->
+  <div id="practice">
+    <h2 id="practice-timer">練習残り時間: 30秒</h2>
+    <p id="practice-question"></p>
+    <div>
+      <button class="color-btn" style="background:red" onclick="checkPractice('赤')">赤</button>
+      <button class="color-btn" style="background:blue" onclick="checkPractice('青')">青</button>
+      <button class="color-btn" style="background:green" onclick="checkPractice('緑')">緑</button>
+      <button class="color-btn" style="background:gold" onclick="checkPractice('黄')">黄</button>
+    </div>
+  </div>
+
+  <!-- 練習終了メッセージ -->
+  <div id="message">
+    <h2>✅ 練習が終わりました</h2>
+    <p>ルールが理解できたら「本番を開始」ボタンを押してください。</p>
+    <button onclick="startMain()">本番を開始</button>
+  </div>
+
+  <!-- 本番モード -->
+  <div id="main">
+    <h2 id="timer">残り時間: 10:00</h2>
+    <p id="question"></p>
+    <div>
+      <button class="color-btn" style="background:red" onclick="checkAnswer('赤')">赤</button>
+      <button class="color-btn" style="background:blue" onclick="checkAnswer('青')">青</button>
+      <button class="color-btn" style="background:green" onclick="checkAnswer('緑')">緑</button>
+      <button class="color-btn" style="background:gold" onclick="checkAnswer('黄')">黄</button>
+    </div>
+    <p id="feedback" style="font-size: 24px; font-weight: bold; color: red;"></p>
+  </div>
+
+  <!-- 結果画面 -->
+  <div id="result">
+    <h2>お疲れさまでした！</h2>
+    <p id="score"></p>
+  </div>
+
+<script>
+let username = "", temp = "";
+let correct = 0, total = 0;
+let timeLeft = 600; // 本番10分
+let timerInterval;
+let colors = ["赤", "青", "緑", "黄"];
+let colorMap = { "赤": "red", "青": "blue", "緑": "green", "黄": "gold" };
+let currentColor, currentText;
+
+// --- 練習モード ---
+let practiceTime = 30;
+let practiceInterval;
+
+// 練習開始
+function startPractice() {
+  username = document.getElementById("username").value.trim();
+  temp = document.getElementById("temperature").value.trim();
+  if (!username || !temp) {
+    alert("名前と気温を入力してください");
+    return;
+  }
+
+  document.getElementById("start").style.display = "none";
+  document.getElementById("practice").style.display = "block";
+  nextPractice();
+
+  practiceInterval = setInterval(() => {
+    practiceTime--;
+    document.getElementById("practice-timer").textContent = `練習残り時間: ${practiceTime}秒`;
+    if (practiceTime <= 0) {
+      clearInterval(practiceInterval);
+      endPractice();
+    }
+  }, 1000);
+}
+
+function nextPractice() {
+  currentText = colors[Math.floor(Math.random() * colors.length)];
+  currentColor = colors[Math.floor(Math.random() * colors.length)];
+  document.getElementById("practice-question").textContent = currentText;
+  document.getElementById("practice-question").style.color = colorMap[currentColor];
+}
+
+function checkPractice(ans) {
+  if (ans === currentColor) {
+    nextPractice();
+  } else {
+    // 間違っても進む
+    nextPractice();
+  }
+}
+
+function endPractice() {
+  document.getElementById("practice").style.display = "none";
+  document.getElementById("message").style.display = "block";
+}
+
+// --- 本番モード ---
+function startMain() {
+  document.getElementById("message").style.display = "none";
+  document.getElementById("main").style.display = "block";
+  nextQuestion();
+  startTimer();
+}
+
+function startTimer() {
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    let min = Math.floor(timeLeft / 60);
+    let sec = timeLeft % 60;
+    document.getElementById("timer").textContent =
+      `残り時間: ${min}:${sec.toString().padStart(2,"0")}`;
+
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      endQuiz();
+    }
+  }, 1000);
+}
+
+function nextQuestion() {
+  currentText = colors[Math.floor(Math.random() * colors.length)];
+  currentColor = colors[Math.floor(Math.random() * colors.length)];
+  document.getElementById("question").textContent = currentText;
+  document.getElementById("question").style.color = colorMap[currentColor];
+  document.getElementById("feedback").textContent = "";
+  total++;
+}
+
+function checkAnswer(ans) {
+  if (ans === currentColor) {
+    correct++;
+    nextQuestion();
+  } else {
+    document.getElementById("feedback").textContent = "❌ 不正解！もう一度！";
+  }
+}
+
+function endQuiz() {
+  document.getElementById("main").style.display = "none";
+  document.getElementById("result").style.display = "block";
+  let accuracy = total > 0 ? ((correct / total) * 100).toFixed(1) : 0;
+
+  document.getElementById("score").innerHTML =
+    `正答数: ${correct} / 問題数: ${total}<br>正答率: ${accuracy}%`;
+
+  sendToGoogleForm(username, temp, correct, total, accuracy);
+}
+
+// Googleフォーム送信
+function sendToGoogleForm(name, temp, correct, total, accuracy) {
+  const formUrl = "https://docs.google.com/forms/d/e/1FAIpQLSdF_9dHEMEPIYEWloJs0Reo9emmZq0rrjFB3oIKExmbJE7ORQ/formResponse";
+  const data = new FormData();
+  data.append("entry.19896881", name);      // 名前
+  data.append("entry.665886500", temp);     // 気温
+  data.append("entry.142247126", correct);  // 正答数
+  data.append("entry.2032695773", total);   // 問題数
+  data.append("entry.566413443", accuracy); // 正答率 
+
+  fetch(formUrl, { method: "POST", body: data, mode: "no-cors" })
+    .then(() => console.log("Googleフォームに送信しました"));
+}
+</script>
+</body>
+</html>
