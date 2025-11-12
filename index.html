@@ -85,7 +85,7 @@
       .color-btn { width: 80%; height: 55px; }
     }
 
-    #quiz, #result, #practice, #main, #message {
+    #practice, #main, #message, #result {
       display: none;
     }
   </style>
@@ -108,12 +108,14 @@
     <div id="practice">
       <h3 id="practice-timer">練習残り時間: 30秒</h3>
       <div id="practice-question"></div>
+      <p id="practice-instruction" style="font-weight:bold;"></p>
       <div>
         <button class="color-btn" style="background:red" onclick="checkPractice('赤')">赤</button>
         <button class="color-btn" style="background:blue" onclick="checkPractice('青')">青</button><br>
         <button class="color-btn" style="background:green" onclick="checkPractice('緑')">緑</button>
         <button class="color-btn" style="background:gold;color:black" onclick="checkPractice('黄')">黄</button>
       </div>
+      <p id="practice-feedback"></p>
     </div>
 
     <!-- 練習終了メッセージ -->
@@ -127,7 +129,7 @@
     <div id="main">
       <h3 id="timer">残り時間: 10:00</h3>
       <div id="question"></div>
-      <p id="instruction" style="font-weight:bold; margin-top:5px;"></p>
+      <p id="instruction" style="font-weight:bold;"></p>
       <div>
         <button class="color-btn" style="background:red" onclick="checkAnswer('赤')">赤</button>
         <button class="color-btn" style="background:blue" onclick="checkAnswer('青')">青</button><br>
@@ -158,6 +160,7 @@ let questionTimer;
 let practiceTime = 30;
 let practiceInterval;
 
+// ===== 練習モード =====
 function startPractice() {
   username = document.getElementById("username").value.trim();
   temp = document.getElementById("temperature").value.trim();
@@ -181,14 +184,36 @@ function startPractice() {
 }
 
 function nextPractice() {
+  clearTimeout(questionTimer);
   currentText = colors[Math.floor(Math.random() * colors.length)];
   currentColor = colors[Math.floor(Math.random() * colors.length)];
-  document.getElementById("practice-question").textContent = currentText;
-  document.getElementById("practice-question").style.color = colorMap[currentColor];
+  currentMode = Math.random() < 0.5 ? "color" : "meaning";
+
+  const q = document.getElementById("practice-question");
+  const feedback = document.getElementById("practice-feedback");
+  const inst = document.getElementById("practice-instruction");
+  feedback.textContent = "";
+
+  q.textContent = currentText;
+  q.style.color = colorMap[currentColor];
+  inst.textContent = currentMode === "color" ? "👉 インクの色を答えてください" : "👉 文字の意味を答えてください";
+
+  questionTimer = setTimeout(() => {
+    feedback.textContent = "⏰ 時間切れ！";
+    nextPractice();
+  }, 10000);
 }
 
 function checkPractice(ans) {
-  nextPractice();
+  clearTimeout(questionTimer);
+  const feedback = document.getElementById("practice-feedback");
+
+  const isCorrect =
+    (currentMode === "color" && ans === currentColor) ||
+    (currentMode === "meaning" && ans === currentText);
+
+  feedback.textContent = isCorrect ? "⭕ 正解！" : "❌ 不正解";
+  setTimeout(nextPractice, 700);
 }
 
 function endPractice() {
@@ -196,6 +221,7 @@ function endPractice() {
   document.getElementById("message").style.display = "block";
 }
 
+// ===== 本番モード =====
 function startMain() {
   document.getElementById("message").style.display = "none";
   document.getElementById("main").style.display = "block";
@@ -208,8 +234,7 @@ function startTimer() {
     timeLeft--;
     let min = Math.floor(timeLeft / 60);
     let sec = timeLeft % 60;
-    document.getElementById("timer").textContent =
-      `残り時間: ${min}:${sec.toString().padStart(2, "0")}`;
+    document.getElementById("timer").textContent = `残り時間: ${min}:${sec.toString().padStart(2, "0")}`;
     if (timeLeft <= 0) {
       clearInterval(timerInterval);
       endQuiz();
@@ -224,15 +249,14 @@ function nextQuestion() {
   currentMode = Math.random() < 0.5 ? "color" : "meaning";
   total++;
 
-  const questionEl = document.getElementById("question");
+  const q = document.getElementById("question");
   const feedback = document.getElementById("feedback");
-  const instruction = document.getElementById("instruction");
+  const inst = document.getElementById("instruction");
   feedback.textContent = "";
 
-  questionEl.textContent = currentText;
-  questionEl.style.color = colorMap[currentColor];
-  instruction.textContent =
-    currentMode === "color" ? "👉 インクの色を答えてください" : "👉 文字の意味を答えてください";
+  q.textContent = currentText;
+  q.style.color = colorMap[currentColor];
+  inst.textContent = currentMode === "color" ? "👉 インクの色を答えてください" : "👉 文字の意味を答えてください";
 
   questionTimer = setTimeout(() => {
     feedback.textContent = "⏰ 時間切れ！";
@@ -251,10 +275,10 @@ function checkAnswer(ans) {
   if (isCorrect) {
     correct++;
     feedback.textContent = "⭕ 正解！";
-    setTimeout(nextQuestion, 500);
   } else {
-    feedback.textContent = "❌ 不正解！もう一度！";
+    feedback.textContent = "❌ 不正解";
   }
+  setTimeout(nextQuestion, 700);
 }
 
 function endQuiz() {
@@ -268,6 +292,7 @@ function endQuiz() {
   sendToGoogleForm(username, temp, correct, total, accuracy);
 }
 
+// ===== Googleフォーム送信 =====
 function sendToGoogleForm(name, temp, correct, total, accuracy) {
   const formUrl =
     "https://docs.google.com/forms/d/e/1FAIpQLSdF_9dHEMEPIYEWloJs0Reo9emmZq0rrjFB3oIKExmbJE7ORQ/formResponse";
