@@ -63,17 +63,17 @@
 <script>
 let username = "", temp = "";
 let correct = 0, total = 0;
-let timeLeft = 60; // 本番10分
+let timeLeft = 600; // 本番10分
 let timerInterval;
 let colors = ["赤", "青", "緑", "黄"];
 let colorMap = { "赤": "red", "青": "blue", "緑": "green", "黄": "gold" };
-let currentColor, currentText;
+let currentColor, currentText, currentMode; // ← new: mode 追加（color or meaning）
+let questionStartTime;
 
 // --- 練習モード ---
 let practiceTime = 30;
 let practiceInterval;
 
-// 練習開始
 function startPractice() {
   username = document.getElementById("username").value.trim();
   temp = document.getElementById("temperature").value.trim();
@@ -104,12 +104,7 @@ function nextPractice() {
 }
 
 function checkPractice(ans) {
-  if (ans === currentColor) {
-    nextPractice();
-  } else {
-    // 間違っても進む
-    nextPractice();
-  }
+  nextPractice(); // 練習では正誤関係なく進行
 }
 
 function endPractice() {
@@ -131,7 +126,7 @@ function startTimer() {
     let min = Math.floor(timeLeft / 60);
     let sec = timeLeft % 60;
     document.getElementById("timer").textContent =
-      `残り時間: ${min}:${sec.toString().padStart(2,"0")}`;
+      `残り時間: ${min}:${sec.toString().padStart(2, "0")}`;
 
     if (timeLeft <= 0) {
       clearInterval(timerInterval);
@@ -143,18 +138,44 @@ function startTimer() {
 function nextQuestion() {
   currentText = colors[Math.floor(Math.random() * colors.length)];
   currentColor = colors[Math.floor(Math.random() * colors.length)];
-  document.getElementById("question").textContent = currentText;
-  document.getElementById("question").style.color = colorMap[currentColor];
-  document.getElementById("feedback").textContent = "";
+  currentMode = Math.random() < 0.5 ? "color" : "meaning"; // 50%ずつでモード選択
   total++;
+
+  let questionText = document.getElementById("question");
+  let feedback = document.getElementById("feedback");
+  feedback.textContent = "";
+
+  // 表示設定
+  questionText.textContent = currentText;
+  questionText.style.color = colorMap[currentColor];
+
+  if (currentMode === "color") {
+    document.getElementById("timer").textContent += "　👉 インクの色を答えてください";
+  } else {
+    document.getElementById("timer").textContent += "　👉 文字の意味を答えてください";
+  }
+
+  // タイマーで10秒後に自動次へ
+  clearTimeout(questionStartTime);
+  questionStartTime = setTimeout(() => {
+    document.getElementById("feedback").textContent = "⏰ 時間切れ！";
+    nextQuestion();
+  }, 10000);
 }
 
 function checkAnswer(ans) {
-  if (ans === currentColor) {
+  clearTimeout(questionStartTime);
+  let feedback = document.getElementById("feedback");
+
+  let isCorrect =
+    (currentMode === "color" && ans === currentColor) ||
+    (currentMode === "meaning" && ans === currentText);
+
+  if (isCorrect) {
     correct++;
     nextQuestion();
   } else {
-    document.getElementById("feedback").textContent = "❌ 不正解！もう一度！";
+    feedback.textContent = "❌ 不正解！もう一度！";
   }
 }
 
@@ -171,17 +192,19 @@ function endQuiz() {
 
 // Googleフォーム送信
 function sendToGoogleForm(name, temp, correct, total, accuracy) {
-  const formUrl = "https://docs.google.com/forms/d/e/1FAIpQLSdF_9dHEMEPIYEWloJs0Reo9emmZq0rrjFB3oIKExmbJE7ORQ/formResponse";
+  const formUrl =
+    "https://docs.google.com/forms/d/e/1FAIpQLSdF_9dHEMEPIYEWloJs0Reo9emmZq0rrjFB3oIKExmbJE7ORQ/formResponse";
   const data = new FormData();
-  data.append("entry.19896881", name);      // 名前
-  data.append("entry.665886500", temp);     // 気温
-  data.append("entry.142247126", correct);  // 正答数
-  data.append("entry.2032695773", total);   // 問題数
-  data.append("entry.566413443", accuracy); // 正答率 
+  data.append("entry.19896881", name);
+  data.append("entry.665886500", temp);
+  data.append("entry.142247126", correct);
+  data.append("entry.2032695773", total);
+  data.append("entry.566413443", accuracy);
 
   fetch(formUrl, { method: "POST", body: data, mode: "no-cors" })
     .then(() => console.log("Googleフォームに送信しました"));
 }
 </script>
+
 </body>
 </html>
