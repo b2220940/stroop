@@ -98,9 +98,9 @@
 
     <!-- 開始画面 -->
     <div id="start">
-      <p>被験者名と気温を入力してください</p>
+      <p>被験者名と温度を入力してください</p>
       <input type="text" id="username" placeholder="名前を入力"><br>
-      <input type="number" id="temperature" placeholder="気温（℃）を入力"><br>
+      <input type="number" id="temperature" placeholder="水温（℃）を入力"><br>
       <button onclick="startPractice()">練習を開始</button>
     </div>
 
@@ -113,7 +113,7 @@
         <button class="color-btn" style="background:red" onclick="checkPractice('赤')">赤</button>
         <button class="color-btn" style="background:blue" onclick="checkPractice('青')">青</button><br>
         <button class="color-btn" style="background:green" onclick="checkPractice('緑')">緑</button>
-        <button class="color-btn" style="background:gold;color:black" onclick="checkPractice('黄')">黄</button>
+        <button class="color-btn" style="background:gold" onclick="checkPractice('黄')">黄</button>
       </div>
       <p id="practice-feedback"></p>
     </div>
@@ -165,7 +165,7 @@ function startPractice() {
   username = document.getElementById("username").value.trim();
   temp = document.getElementById("temperature").value.trim();
   if (!username || !temp) {
-    alert("名前と気温を入力してください");
+    alert("名前と温度を入力してください");
     return;
   }
 
